@@ -1,0 +1,515 @@
+{
+  "name": "FortiWeb Interface Status",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/api/scan/webhook",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n \"Content-Type\": \"application/json\",\n \"x-api-key\": \"n8nkeyapi\"\n}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "scanId",
+              "value": "={{$json.scanId}}"
+            },
+            {
+              "name": "host",
+              "value": "={{$json.host}}"
+            },
+            {
+              "name": "report",
+              "value": "={{$json.report}}"
+            },
+            {
+              "name": "structured",
+              "value": "={{$json.structured.toJsonString()}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        5664,
+        -576
+      ],
+      "id": "fb4f5007-ad7e-43ba-8974-7682b5a3ae97",
+      "name": "HTTP Request - Report"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nconst rawText = input.output || input.text || JSON.stringify(input);\n\nconst cleaned = rawText.replace(/```json|```/g, \"\").trim();\n\nlet cliData = {};\ntry {\n  cliData = JSON.parse(cleaned);\n} catch (e) {\n  cliData = input;\n}\n\nreturn [{\n  json: {\n    scanId: cliData.scanId || input.scanId || \"\",\n    host: cliData.host || input.host || \"\",\n    type: \"cli_commands\",\n    cli_commands: cliData.cli || [],\n    cli_summary: cliData.summary || \"\",\n    warnings: cliData.warnings || []\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6912,
+        -360
+      ],
+      "id": "77f43d01-2d90-466f-bb7c-edb79425bb7d",
+      "name": "Clean CLI Output"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/api/scan/webhook",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n \"Content-Type\": \"application/json\",\n \"x-api-key\": \"n8nkeyapi\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"scanId\": \"{{ $json.scanId }}\",\n  \"host\": \"{{ $json.host }}\",\n  \"type\": \"cli_commands\",\n  \"cli_commands\": {{ JSON.stringify($json.cli_commands) }},\n  \"cli_summary\": {{ JSON.stringify($json.cli_summary) }},\n  \"warnings\": {{ JSON.stringify($json.warnings) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        7136,
+        -360
+      ],
+      "id": "f3efc99c-4953-420c-b62b-10f7d6d0d239",
+      "name": "HTTP Request - CLI"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "test",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        3968,
+        -432
+      ],
+      "id": "c6319f92-8e23-481d-8813-dd2fbac47465",
+      "name": "Webhook1",
+      "webhookId": "c9f50b3f-dda6-4fce-b304-5854f0dcfbe5"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "O2PvbtiIWoRxodkd",
+          "mode": "list"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "keyValue": "fortiweb_config_raw"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        4192,
+        -360
+      ],
+      "id": "3300015d-a069-40d4-849d-bcd58edb27cb",
+      "name": "Get row(s)1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================================\n// FortiWeb On-Demand Config Parser v3\n// Clean extraction — no duplicates, no name-only noise\n// ============================================================\n\nfunction escapeRegex(s) {\n  return s.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');\n}\n\nfunction getSet(body, key) {\n  const re = new RegExp('\\\\bset ' + escapeRegex(key) + '\\\\s+(.+)');\n  const m = body.match(re);\n  return m ? m[1].trim().replace(/^\"|\"$/g, '') : null;\n}\n\n// Strict section extractor — only extracts the EXACT named config section\n// and stops at the matching top-level \"end\" without bleeding into subsections\nfunction extractSection(text, sectionPath) {\n  const escaped = escapeRegex(sectionPath);\n  const start = text.search(new RegExp('\\\\bconfig\\\\s+' + escaped + '\\\\s*\\\\n'));\n  if (start === -1) return null;\n\n  let depth = 0;\n  let i = start;\n  const lines = text.slice(start).split('\\n');\n  const sectionLines = [];\n\n  for (const line of lines) {\n    const trimmed = line.trim();\n    if (trimmed.startsWith('config ')) depth++;\n    if (trimmed === 'end') {\n      depth--;\n      if (depth === 0) {\n        sectionLines.push(line);\n        break;\n      }\n    }\n    sectionLines.push(line);\n  }\n\n  return sectionLines.join('\\n');\n}\n\n// Extract only TOP-LEVEL edit blocks from a section (not nested ones)\nfunction extractTopLevelBlocks(sectionText) {\n  if (!sectionText) return [];\n  const blocks = [];\n  const lines = sectionText.split('\\n');\n  let depth = 0;\n  let currentName = null;\n  let currentLines = [];\n  let inTopEdit = false;\n\n  for (const line of lines) {\n    const trimmed = line.trim();\n\n    if (trimmed.startsWith('config ')) depth++;\n\n    if (depth === 1 && trimmed.startsWith('edit ')) {\n      currentName = trimmed.replace(/^edit\\s+/, '').replace(/^\"|\"$/g, '').trim();\n      currentLines = [];\n      inTopEdit = true;\n    } else if (depth === 1 && trimmed === 'next' && inTopEdit) {\n      blocks.push({ name: currentName, body: currentLines.join('\\n') });\n      currentName = null;\n      currentLines = [];\n      inTopEdit = false;\n    } else if (inTopEdit) {\n      currentLines.push(line);\n    }\n\n    if (trimmed === 'end') depth--;\n  }\n\n  return blocks;\n}\n\nfunction stripNulls(obj) {\n  return JSON.parse(JSON.stringify(obj, (k, v) => v === null ? undefined : v));\n}\n\n// Only keep blocks that have at least one field beyond just a name\nfunction hasData(obj) {\n  const keys = Object.keys(obj).filter(k => k !== 'name' && k !== 'type');\n  return keys.length > 0;\n}\n\n// ── Get raw config from Data Table ────────────────────────\nconst row = $input.first().json;\nif (!row || !row.value) throw new Error(\"❌ Raw config not found in Data Table\");\nconst rawConfig = typeof row.value === 'string' ? row.value : JSON.stringify(row.value);\n\n// ── 1. Server Policies ─────────────────────────────────────\nconst policies = [];\nconst policySection = extractSection(rawConfig, 'server-policy policy');\nif (policySection) {\n  for (const b of extractTopLevelBlocks(policySection)) {\n    const obj = {\n      name: b.name,\n      vserver: getSet(b.body, 'vserver'),\n      server_pool: getSet(b.body, 'server-pool'),\n      web_protection: getSet(b.body, 'web-protection-profile'),\n      status: getSet(b.body, 'status'),\n      protocol: getSet(b.body, 'protocol'),\n      deployment_mode: getSet(b.body, 'deployment-mode'),\n    };\n    if (hasData(obj)) policies.push(stripNulls(obj));\n  }\n}\n\n// ── 2. HTTP Header Security ────────────────────────────────\nconst httpHeaderSecurity = [];\nconst headerSection = extractSection(rawConfig, 'waf http-header-security');\nif (headerSection) {\n  for (const b of extractTopLevelBlocks(headerSection)) {\n    const obj = {\n      name: b.name,\n      status: getSet(b.body, 'status'),\n      x_frame_options: getSet(b.body, 'x-frame-options'),\n      x_content_type: getSet(b.body, 'x-content-type-options'),\n      hsts: getSet(b.body, 'strict-transport-security'),\n      hsts_max_age: getSet(b.body, 'strict-transport-security-max-age'),\n      csp: getSet(b.body, 'content-security-policy'),\n      csp_value: getSet(b.body, 'content-security-policy-value'),\n      referrer_policy: getSet(b.body, 'referrer-policy'),\n    };\n    if (hasData(obj)) httpHeaderSecurity.push(stripNulls(obj));\n  }\n}\n\n// ── 3. Inline Web Protection Profiles ─────────────────────\nconst inlineProfiles = [];\nconst inlineSection = extractSection(rawConfig, 'waf web-protection-profile inline-protection');\nif (inlineSection) {\n  for (const b of extractTopLevelBlocks(inlineSection)) {\n    const obj = {\n      name: b.name,\n      type: 'inline',\n      signature_rule: getSet(b.body, 'signature-rule'),\n      http_protocol_restrict: getSet(b.body, 'http-protocol-parameter-restriction'),\n      http_header_security: getSet(b.body, 'http-header-security'),\n      bot_mitigate_policy: getSet(b.body, 'bot-mitigate-policy'),\n      ip_intelligence: getSet(b.body, 'ip-intelligence'),\n      custom_access_policy: getSet(b.body, 'custom-access-policy'),\n      webshell_detection: getSet(b.body, 'webshell-detection-policy'),\n      file_upload_policy: getSet(b.body, 'file-upload-policy'),\n      syntax_attack_detection: getSet(b.body, 'syntax-based-attack-detection'),\n      client_management: getSet(b.body, 'client-management'),\n    };\n    if (hasData(obj)) inlineProfiles.push(stripNulls(obj));\n  }\n}\n\n// ── 4. Offline Web Protection Profiles ────────────────────\nconst offlineProfiles = [];\nconst offlineSection = extractSection(rawConfig, 'waf web-protection-profile offline-protection');\nif (offlineSection) {\n  for (const b of extractTopLevelBlocks(offlineSection)) {\n    const obj = {\n      name: b.name,\n      type: 'offline',\n      signature_rule: getSet(b.body, 'signature-rule'),\n      http_protocol_restrict: getSet(b.body, 'http-protocol-parameter-restriction'),\n      http_header_security: getSet(b.body, 'http-header-security'),\n      ip_intelligence: getSet(b.body, 'ip-intelligence'),\n      webshell_detection: getSet(b.body, 'webshell-detection-policy'),\n      client_management: getSet(b.body, 'client-management'),\n    };\n    if (hasData(obj)) offlineProfiles.push(stripNulls(obj));\n  }\n}\n\n// ── 5. Signature Rules ─────────────────────────────────────\nconst signatureRules = [];\nconst sigSection = extractSection(rawConfig, 'waf signature');\nif (sigSection) {\n  for (const b of extractTopLevelBlocks(sigSection)) {\n    const obj = {\n      name: b.name,\n      status: getSet(b.body, 'status'),\n      alert_only: getSet(b.body, 'alert-only'),\n      sql_injection: getSet(b.body, 'sql-injection'),\n      xss: getSet(b.body, 'cross-site-scripting'),\n      main_class_action: getSet(b.body, 'main-class-action'),\n      sub_class_action: getSet(b.body, 'sub-class-action'),\n    };\n    if (hasData(obj)) signatureRules.push(stripNulls(obj));\n  }\n}\n\n// ── 6. HTTP Protocol Constraints ───────────────────────────\nconst httpConstraints = [];\nconst constraintSection = extractSection(rawConfig, 'waf http-protocol-parameter-restriction');\nif (constraintSection) {\n  for (const b of extractTopLevelBlocks(constraintSection)) {\n    const obj = {\n      name: b.name,\n      status: getSet(b.body, 'status'),\n      illegal_header: getSet(b.body, 'illegal-header-name-or-value'),\n      max_url_length: getSet(b.body, 'max-url-length'),\n      max_header_length: getSet(b.body, 'max-http-header-length'),\n      max_body_length: getSet(b.body, 'max-http-body-length'),\n    };\n    if (hasData(obj)) httpConstraints.push(stripNulls(obj));\n  }\n}\n\n// ── 7. Custom Protection Rules ─────────────────────────────\nconst customRules = [];\nconst customSection = extractSection(rawConfig, 'waf custom-protection-rule');\nif (customSection) {\n  for (const b of extractTopLevelBlocks(customSection)) {\n    const obj = {\n      name: b.name,\n      action: getSet(b.body, 'action'),\n      severity: getSet(b.body, 'severity'),\n      status: getSet(b.body, 'status'),\n    };\n    if (hasData(obj)) customRules.push(stripNulls(obj));\n  }\n}\n\n// ── 8. Bot Mitigation Policies ─────────────────────────────\nconst botPolicies = [];\nconst botSection = extractSection(rawConfig, 'waf bot-mitigate-policy');\nif (botSection) {\n  for (const b of extractTopLevelBlocks(botSection)) {\n    const obj = {\n      name: b.name,\n      status: getSet(b.body, 'status'),\n      action: getSet(b.body, 'action'),\n    };\n    if (hasData(obj)) botPolicies.push(stripNulls(obj));\n  }\n}\n\n// ── 9. IP Intelligence ─────────────────────────────────────\nconst ipIntelligence = [];\nconst ipSection = extractSection(rawConfig, 'waf ip-intelligence');\nif (ipSection) {\n  for (const b of extractTopLevelBlocks(ipSection)) {\n    const obj = {\n      name: b.name,\n      status: getSet(b.body, 'status'),\n      action: getSet(b.body, 'action'),\n    };\n    if (hasData(obj)) ipIntelligence.push(stripNulls(obj));\n  }\n}\n\n// ── Build final result ─────────────────────────────────────\nconst result = {\n  summary: {\n    policies_count: policies.length,\n    inline_profiles_count: inlineProfiles.length,\n    offline_profiles_count: offlineProfiles.length,\n    signature_rules_count: signatureRules.length,\n    http_header_rules_count: httpHeaderSecurity.length,\n    custom_rules_count: customRules.length,\n    http_constraints_count: httpConstraints.length,\n  },\n  policies,\n  web_protection_profiles: [...inlineProfiles, ...offlineProfiles],\n  http_header_security: httpHeaderSecurity,\n  signature_rules: signatureRules,\n  http_protocol_constraints: httpConstraints,\n  custom_protection_rules: customRules,\n  bot_mitigation_policies: botPolicies,\n  ip_intelligence_policies: ipIntelligence,\n};\n\n// ── Debug log ──────────────────────────────────────────────\nconsole.log(\"✅ FortiWeb config parsed successfully\");\nconsole.log(\"Policies:\", policies.length);\nconsole.log(\"Inline Profiles:\", inlineProfiles.length);\nconsole.log(\"Offline Profiles:\", offlineProfiles.length);\nconsole.log(\"Signature Rules:\", signatureRules.length);\nconsole.log(\"HTTP Header Rules:\", httpHeaderSecurity.length);\nconsole.log(\"Custom Rules:\", customRules.length);\n\nreturn [{ json: result }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4416,
+        -360
+      ],
+      "id": "a06d84ac-5bb6-408f-8adb-5c4559ed5b95",
+      "name": "Code in JavaScript4"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        4640,
+        -432
+      ],
+      "id": "5c662934-40d6-4498-8526-04a7ffb30c53",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst zap = item.body || {};\nconst fortiweb = {\n  policies: item.policies || [],\n  web_protection_profiles: item.web_protection_profiles || [],\n  http_header_security: item.http_header_security || [],\n  signature_rules: item.signature_rules || [],\n  http_protocol_constraints: item.http_protocol_constraints || [],\n  custom_protection_rules: item.custom_protection_rules || []\n};\nreturn [{ json: { scanId: zap.scanId || null, host: zap.targetUrl || null, zap, fortiweb } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4864,
+        -432
+      ],
+      "id": "f04f7f83-353d-4818-9c5e-a62fc2bde2f0",
+      "name": "Code in JavaScript5"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a cybersecurity expert specializing in web application security and FortiWeb WAF configuration.\nYour task is to analyze BOTH:\n1. OWASP ZAP scan results\n2. Existing FortiWeb configuration\nAnd produce a **configuration-aware security analysis**.\n---\n## 🔴 IMPORTANT RULES\n* You MUST correlate ZAP findings with FortiWeb configuration\n* You MUST check:\n  • If protection already exists\n  • If it is enabled or disabled\n  • If it is misconfigured\n  • If it is NOT linked to a server-policy\n* You MUST NOT generate any CLI commands, shell commands, terminal instructions, or command-line syntax of any kind\n* All remediation steps MUST be expressed as configuration object changes only (field names, values, object references)\n\n### Decision Logic:\n* If protection EXISTS → MODIFY or ENABLE it\n* If protection EXISTS but not linked → ATTACH it\n* If protection is MISSING → CREATE it\n* NEVER suggest duplicate configurations\n* ALWAYS reference REAL object names from config\n* NEVER invent names unless absolutely necessary\n---\n## 🟡 CONTEXT: FORTIWEB CONFIGURATION\nYou are provided with the CURRENT FortiWeb parsed configuration.\nFortiWeb Parsed Config:\n{{ JSON.stringify({\npolicies: $json.fortiweb.policies,\nweb_protection_profiles: $json.fortiweb.web_protection_profiles,\nhttp_header_security: $json.fortiweb.http_header_security,\nsignature_rules: $json.fortiweb.signature_rules,\nhttp_protocol_constraints: $json.fortiweb.http_protocol_constraints,\ncustom_protection_rules: $json.fortiweb.custom_protection_rules\n}) }}\n---\n## 🔵 CONTEXT: OWASP ZAP SCAN RESULT\n{{ JSON.stringify($json.zap) }}\n---\n## 🟢 OUTPUT REQUIREMENTS\nYou MUST produce TWO outputs:\n---\n# ========================\n# 1. HUMAN REPORT\n# ========================\nProvide a clear and structured markdown report:\n### 1. Alert Classification & Summary\n* Total alerts\n* Breakdown by severity\n### 2. Configuration-Aware Analysis\nFor each major issue:\n* Does protection already exist in FortiWeb?\n* Is it enabled, disabled, or misconfigured?\n* Is it linked to a server-policy?\n### 3. FortiWeb Remediation (CONFIG-AWARE)\n* Explicitly mention:\n  • policy names\n  • web protection profiles\n  • header/security objects\n* Prefer MODIFY over CREATE\n* Express all changes as configuration field/value pairs — NO CLI commands\n### 4. Prioritized Action Plan\n* Ordered by risk and ease of fix\n* Each action described as a UI/config change, not a command\n---\n# ========================\n# 2. STRUCTURED JSON (FOR AUTOMATION)\n# ========================\n## 🔴 STRICT RULES\n* Output ONLY valid JSON\n* No markdown\n* No comments\n* Directly parsable\n* MUST include scanId and host at ROOT\n---\n## REQUIRED FORMAT\n{\n\"scanId\": string,\n\"host\": string,\n\"summary\": {\n\"total\": number,\n\"critical\": number,\n\"high\": number,\n\"medium\": number,\n\"low\": number,\n\"informational\": number\n},\n\"issues\": [\n{\n\"id\": \"unique_id\",\n\"name\": \"string\",\n\"severity\": \"LOW | MEDIUM | HIGH | CRITICAL\",\n\"affected\": [\"url1\", \"url2\"],\n  \"analysis\": {\n    \"exists_in_fortiweb\": true | false,\n    \"status\": \"ENABLED | DISABLED | MISCONFIGURED | NOT_FOUND\",\n    \"linked_to_policy\": true | false,\n    \"details\": \"short explanation\"\n  },\n  \"fix\": {\n    \"strategy\": \"MODIFY | ENABLE | ATTACH | CREATE\",\n    \"fortiweb_feature\": \"HTTP_PROTOCOL_CONSTRAINT | SIGNATURE | CUSTOM_RULE | HEADER_SECURITY\",\n    \"target\": {\n      \"policy\": \"string or null\",\n      \"web_protection_profile\": \"string or null\",\n      \"http_header_security\": \"string or null\",\n      \"signature_rule\": \"string or null\"\n    },\n    \"change\": {\n      \"field\": \"string\",\n      \"value\": \"string\"\n    }\n  }\n}\n]\n}\n---\n# ========================\n# OUTPUT FORMAT\n# ========================\n---REPORT--- <your human readable report here>\n---JSON---\n<raw JSON object only, no markdown fences, no backticks, no comments>",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        5088,
+        -432
+      ],
+      "id": "0beb0b2f-f458-41bf-9b32-3be419ce4cbc",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": "mistral-large-latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "typeVersion": 1,
+      "position": [
+        5160,
+        -208
+      ],
+      "id": "2d3cd3cf-c87f-45b2-b1c4-1a1db6d3e53d",
+      "name": "Mistral Cloud Chat Model1",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "vzz8Pc8bdQO5qsbJ",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.first().json.output;\n\n// Try ---REPORT--- marker first, fall back to everything before ---JSON---\nconst reportMatch = text.match(/---REPORT---([\\s\\S]*?)---JSON---/) || \n                    text.match(/([\\s\\S]*?)---JSON---/);\n\nconst jsonMatch = text.match(/---JSON---([\\s\\S]*?)$/);\n\nif (!jsonMatch) {\n  return [{ json: { error: \"No ---JSON--- marker found\", raw: text.substring(0, 300) } }];\n}\n\nconst report = reportMatch ? reportMatch[1].trim() : \"\";\n\nconst clean = jsonMatch[1]\n  .replace(/```json|```/g, \"\")\n  .replace(/---.*?---/g, \"\")\n  .replace(/\"[^\"]*\"|(\\/\\/[^\\n]*)/g, (m, comment) => comment ? \"\" : m)\n  .replace(/,(\\s*[}\\]])/g, \"$1\")\n  .trim();\n\nlet parsed;\ntry {\n  parsed = JSON.parse(clean);\n} catch (e) {\n  const pos = parseInt(e.message.match(/position (\\d+)/)?.[1] || 0);\n  return [{ json: { \n    error: e.message, \n    near: clean.substring(Math.max(0, pos - 50), pos + 50),\n    raw: clean.substring(0, 500)\n  }}];\n}\n\nreturn [{\n  json: {\n    report:     report,\n    scanId:     parsed.scanId || null,\n    host:       parsed.host || null,\n    structured: parsed,\n    raw_output: text\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5440,
+        -432
+      ],
+      "id": "53b5e6f5-b257-4fb6-882b-52957225a0d0",
+      "name": "Code in JavaScript6"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert FortiWeb CLI engineer (FortiWeb 7.6.4).\nYour ONLY job: Convert the security analysis into precise, ready-to-run CLI commands.\n\nScan ID: {{ $json.scanId }}\nHost: {{ $json.host }}\n\nRules:\n- Prefer \"edit\" existing objects over creating new ones\n- Always use real object names from the provided config\n- Generate minimal valid FortiWeb CLI syntax only\n- Output STRICT JSON and nothing else\n\n{\n  \"scanId\": \"{{ $json.scanId }}\",\n  \"host\": {{ $json.host }},\n  \"cli\": [\n    {\n      \"issue_id\": \"string\",\n      \"issue_name\": \"string\",\n      \"severity\": \"HIGH\",\n      \"description\": \"one-line description\",\n      \"commands\": [\"config ...\", \"edit \\\"Name\\\"\", \"set ...\", \"next\", \"end\"],\n      \"notes\": \"optional short note for reviewer\"\n    }\n  ],\n  \"total_changes\": number,\n  \"summary\": \"e.g. 3 modifications, 1 attachment\",\n  \"warnings\": [\"list of important notes\"]\n}\n\n=== CLI REFERENCE ===\n{{ $json.cli_reference }}\n\n=== SECURITY ANALYSIS ===\n{{ JSON.stringify($json.structured) }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        6560,
+        -360
+      ],
+      "id": "3022dcb0-f260-4da4-bf6b-8658e864ba37",
+      "name": "AI Agent2"
+    },
+    {
+      "parameters": {
+        "model": "mistral-large-latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "typeVersion": 1,
+      "position": [
+        6632,
+        -136
+      ],
+      "id": "20bc7b4e-ab01-4623-9e90-2833626d87f5",
+      "name": "Mistral Cloud Chat Model2",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "vzz8Pc8bdQO5qsbJ",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "O2PvbtiIWoRxodkd",
+          "mode": "list"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "keyValue": "cli_reference"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        5664,
+        -288
+      ],
+      "id": "0d89782c-fdd7-47f2-a791-7594983f0045",
+      "name": "Get row(s)2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\n\nreturn [\n  {\n    json: {\n      value: item.json.value\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5888,
+        -288
+      ],
+      "id": "c911ce51-788a-4e14-8836-42c20c55a263",
+      "name": "Code in JavaScript8"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        6112,
+        -360
+      ],
+      "id": "d25b1fe6-aa3a-4898-87fe-232b9f88f57b",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const { value, ...rest } = item.json;\n\n  return {\n    json: {\n      ...rest,\n      cli_reference: value\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6336,
+        -360
+      ],
+      "id": "f9a5e4fd-eee4-4c04-94fa-aa081df8877d",
+      "name": "Code in JavaScript9"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Clean CLI Output": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - CLI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get row(s)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript4": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript5": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mistral Cloud Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript6": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Report",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get row(s)2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent2": {
+      "main": [
+        [
+          {
+            "node": "Clean CLI Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mistral Cloud Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript8": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "HTTP Request - CLI": {
+      "main": [
+        []
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript9": {
+      "main": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": -1
+  },
+  "versionId": "83c44c3c-57e4-47f2-8ad3-bca57c98f12d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e04fd815b991caf087ca1a81b79345da8862bc26fa43ab206c07a49ecda6adda"
+  },
+  "id": "FHdBOnCgu_r9xBE40Tgnx",
+  "tags": []
+}

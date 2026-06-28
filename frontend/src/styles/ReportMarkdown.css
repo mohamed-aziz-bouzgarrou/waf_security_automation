@@ -1,0 +1,206 @@
+.report-markdown {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #ffffff;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Headings */
+.report-markdown .md-h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 1.2rem 0 0.8rem 0;
+  color: #ffffff;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 0.5rem;
+}
+
+.report-markdown .md-h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 1rem 0 0.6rem 0;
+  color: #ffffff;
+  border-left: 4px solid #64b5f6;
+  padding-left: 0.75rem;
+}
+
+.report-markdown .md-h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0.8rem 0 0.4rem 0;
+  color: #ffffff;
+}
+
+.report-markdown .md-h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0.6rem 0 0.3rem 0;
+  color: #ffffff;
+}
+
+/* Paragraphs */
+.report-markdown .md-p {
+  margin: 0.6rem 0;
+  line-height: 1.8;
+  color: #ffffff;
+}
+
+/* Lists */
+.report-markdown .md-ul,
+.report-markdown .md-ol {
+  margin: 0.8rem 0;
+  padding-left: 1.8rem;
+}
+
+.report-markdown .md-li {
+  margin: 0.3rem 0;
+  color: #ffffff;
+}
+
+.report-markdown .md-li strong {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Code */
+.report-markdown .md-code-inline {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #ffffff;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  font-family: "Courier New", monospace;
+  font-size: 0.9rem;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.report-markdown .md-code-block {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: #ffffff;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  font-family: "Courier New", monospace;
+  font-size: 0.85rem;
+}
+
+.report-markdown .md-pre {
+  background-color: rgba(0, 0, 0, 0.3);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 0.8rem 0;
+  font-family: "Courier New", monospace;
+  font-size: 0.85rem;
+}
+
+/* Tables */
+.report-markdown .md-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  margin: 1rem 0;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.report-markdown .md-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: transparent;
+  font-size: 12px;
+}
+
+.report-markdown .md-thead {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.report-markdown .md-th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 700;
+  color: #ffffff;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.report-markdown .md-th:last-child {
+  border-right: none;
+}
+
+.report-markdown .md-td {
+  padding: 0.7rem 1rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  word-break: break-word;
+  color: #ffffff;
+}
+
+.report-markdown .md-td:last-child {
+  border-right: none;
+}
+
+.report-markdown .md-tbody tr:last-child .md-td {
+  border-bottom: none;
+}
+
+.report-markdown .md-tbody tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.report-markdown .md-tbody tr:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Horizontal Rule */
+.report-markdown .md-hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+  margin: 1.5rem 0;
+}
+
+/* Strong & Emphasis */
+.report-markdown .md-strong {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.report-markdown .md-em {
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Blockquote */
+.report-markdown .md-blockquote {
+  border-left: 4px solid #64b5f6;
+  padding-left: 1rem;
+  margin: 0.8rem 0;
+  color: #ffffff;
+  font-style: italic;
+  background-color: rgba(59, 130, 246, 0.1);
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+}
+
+/* Scrollbar styling */
+.report-markdown::-webkit-scrollbar {
+  width: 8px;
+}
+
+.report-markdown::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.report-markdown::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.report-markdown::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

@@ -1,0 +1,93 @@
+version: "3.8"
+
+services:
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n1
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=admin123
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - N8N_SECURE_COOKIE=false
+      - N8N_DB_TYPE=sqlite
+      - N8N_DB_SQLITE_FILE=/home/node/.n8n/database.sqlite
+      - N8N_ENCRYPTION_KEY=your-n8n-encryption-key-min-24-chars-12345678
+    volumes:
+      - ./n8n_data:/home/node/.n8n
+    depends_on:
+      - mongo
+      - zap
+
+  backend:
+    build: ./backend
+    container_name: backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/waf-automation
+      - ZAP_BASE_URL=http://zap:8080
+      - ZAP_API_KEY=changeme
+      - N8N_URL=http://n8n:5678
+      - NODE_ENV=production
+      - PORT=3000
+      - API_KEY=n8nkeyapi
+      - OPENROUTER_API_KEY=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
+      - OPENROUTER_MODEL=openai/gpt-oss-120b:free
+      - FORTIWEB_HOST=https://fortiweb:8443
+      - FORTIWEB_USERNAME=admin
+      - FORTIWEB_PASSWORD=your-fortiweb-password
+      - N8N_WEBHOOK=http://n8n:5678/webhook/fortiweb
+      - N8N_WEBHOOK_URL=http://n8n:5678/webhook/report
+      - N8N_WEBHOOK_SSH_EXECUTION=http://n8n:5678/webhook/ssh-execution
+    depends_on:
+      - mongo
+      - zap
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    restart: always
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_BACKEND_URL=http://localhost:3000
+      - VITE_API_KEY=your-secret-api-key-change-this
+    depends_on:
+      - backend
+
+  mongo:
+    image: mongo:7
+    container_name: mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongo_data:/data/db
+
+  zap:
+    image: ghcr.io/zaproxy/zaproxy:stable
+    container_name: zap
+    restart: always
+    command:
+      - zap.sh
+      - -daemon
+      - -host
+      - 0.0.0.0
+      - -port
+      - "8080"
+      - -config
+      - api.disablekey=true
+      - -config
+      - api.addr=0.0.0.0
+      - -config
+      - api.addrs.addr.name=.*
+      - -config
+      - api.addrs.addr.regex=true
+    ports:
+      - "8080:8080"

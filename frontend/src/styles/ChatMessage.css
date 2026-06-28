@@ -1,0 +1,197 @@
+/* Chat Message Component Styles */
+
+.chat-message {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 4px;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-message.user-message {
+  align-items: flex-end;
+}
+
+.chat-message.assistant-message {
+  align-items: flex-start;
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  margin-bottom: 4px;
+  padding: 0 8px;
+}
+
+.message-header .sender {
+  font-weight: 600;
+  color: var(--color-text-muted, #888);
+  font-size: 12px;
+}
+
+.user-message .message-header .sender {
+  color: var(--color-primary, #64b5f6);
+}
+
+.assistant-message .message-header .sender {
+  color: var(--color-primary, #64b5f6);
+}
+
+.message-header .timestamp {
+  color: var(--color-text-muted, #888);
+  font-size: 10px;
+  margin-left: 8px;
+}
+
+.message-content {
+  max-width: 75%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.user-message .message-content {
+  background-color: var(--color-primary, #64b5f6);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.assistant-message .message-content {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--color-text, #e0e0e0);
+  border: 1px solid rgba(100, 181, 246, 0.2);
+  border-bottom-left-radius: 4px;
+}
+
+.user-message .message-content p {
+  margin: 0;
+  line-height: 1.5;
+  font-size: 13px;
+}
+
+/* Markdown styling for assistant messages */
+.assistant-message .message-content {
+  padding: 12px;
+}
+
+.assistant-message .report-markdown {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--color-text, #e0e0e0);
+}
+
+/* Reset default paragraph margins for report-markdown */
+.assistant-message .report-markdown p {
+  margin: 0.4rem 0;
+}
+
+.assistant-message .report-markdown .md-h1,
+.assistant-message .report-markdown .md-h2,
+.assistant-message .report-markdown .md-h3,
+.assistant-message .report-markdown .md-h4 {
+  margin-top: 0.6rem;
+  margin-bottom: 0.3rem;
+}
+
+.assistant-message .report-markdown .md-h1 {
+  font-size: 1.2rem;
+}
+
+.assistant-message .report-markdown .md-h2 {
+  font-size: 1.1rem;
+  border-left-color: var(--color-primary, #64b5f6);
+}
+
+.assistant-message .report-markdown .md-h3 {
+  font-size: 1rem;
+}
+
+.assistant-message .report-markdown .md-code-inline {
+  background-color: rgba(100, 181, 246, 0.3);
+  color: #ffffff;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  border: 1px solid rgba(100, 181, 246, 0.5);
+}
+
+.assistant-message .report-markdown .md-pre {
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(100, 181, 246, 0.2);
+  padding: 8px;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 0.4rem 0;
+  font-size: 11px;
+}
+
+.assistant-message .report-markdown .md-ul,
+.assistant-message .report-markdown .md-ol {
+  margin: 0.4rem 0;
+  padding-left: 1.2rem;
+}
+
+.assistant-message .report-markdown .md-li {
+  margin: 0.2rem 0;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .message-content {
+    max-width: 80%;
+  }
+
+  .assistant-message .message-content,
+  .user-message .message-content {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .message-content {
+    max-width: 85%;
+  }
+
+  .message-header {
+    font-size: 10px;
+    padding: 0 6px;
+  }
+
+  .message-content {
+    padding: 8px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .message-content {
+    max-width: 90%;
+  }
+
+  .user-message .message-content p {
+    font-size: 12px;
+  }
+
+  .assistant-message .report-markdown {
+    font-size: 11px;
+  }
+  .message-content {
+    max-width: 95%;
+  }
+
+  .message-header {
+    padding: 0 5px;
+  }
+}

@@ -1,0 +1,82 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Data directories (local development)
+# mongo_data/ - included in repo for persistence
+# n8n_data/ - included in repo for workflows
+
+# But ignore these large database files
+mongo_data/*.wt
+mongo_data/journal/
+mongo_data/WiredTiger*
+mongo_data/storage.bson
+
+# Build and dist
+dist/
+build/
+.next/
+
+# IDE and Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Misc
+*.bak
+*.tmp
+.cache/
+*.tar
+*.gz
+*.zip
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Database backups
+*.sqlite
+*.db
+*.dump

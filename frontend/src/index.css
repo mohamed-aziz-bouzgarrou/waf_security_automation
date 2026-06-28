@@ -1,0 +1,27 @@
+/* Import all global styles */
+@import "./styles/globals.css";
+@import "./styles/MainLayout.css";
+@import "./styles/Header.css";
+@import "./styles/Sidebar.css";
+@import "./styles/Card.css";
+@import "./styles/Badges.css";
+@import "./styles/Loading.css";
+@import "./styles/Dashboard.css";
+@import "./styles/Scans.css";
+@import "./styles/Vulnerabilities.css";
+@import "./styles/Reports.css";
+@import "./styles/Settings.css";
+
+/* Apply base styles to html and body */
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  display: flex;
+}

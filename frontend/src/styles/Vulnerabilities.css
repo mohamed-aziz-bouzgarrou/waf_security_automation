@@ -1,0 +1,274 @@
+/* Vulnerabilities Page */
+.vulnerabilities-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.filters-card {
+  margin-bottom: 1.5rem;
+}
+
+.filters-content {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.search-box {
+  flex: 1;
+  min-width: 250px;
+}
+
+.search-input {
+  width: 100%;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-group label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.filter-select {
+  min-width: 150px;
+}
+
+.filter-stats {
+  padding: 0.75rem 1rem;
+  background-color: var(--color-bg-tertiary);
+  border-radius: var(--border-radius);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+/* Vulnerabilities Table */
+.vulnerabilities-table-card {
+  overflow-x: auto;
+  margin-bottom: 2rem;
+}
+
+.vulnerabilities-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.vulnerabilities-table thead {
+  border-bottom: 2px solid var(--color-border);
+}
+
+.vulnerabilities-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.vulnerabilities-table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.9rem;
+}
+
+.vulnerabilities-table tbody tr {
+  transition: var(--transition);
+}
+
+.vulnerabilities-table tbody tr:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+.vulnerabilities-table strong {
+  color: var(--color-text-primary);
+}
+
+.count-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background-color: var(--color-primary);
+  color: white;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.cvss-score {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.url-count {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  background-color: var(--color-bg-tertiary);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--border-radius);
+  display: inline-block;
+}
+
+/* Risk Distribution */
+.risk-distribution {
+  margin-bottom: 2rem;
+}
+
+.distribution-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.distribution-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.distribution-bar {
+  width: 100%;
+  height: 80px;
+  border-radius: var(--border-radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.distribution-bar:hover {
+  transform: scale(1.05);
+}
+
+.distribution-value {
+  color: white;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.distribution-item label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+/* Modal Details */
+.detail-badges {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.description-section,
+.urls-section,
+.parameters-section {
+  margin-bottom: 1.5rem;
+}
+
+.description-section h4,
+.urls-section h4,
+.parameters-section h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  color: var(--color-text-primary);
+}
+
+.description-section p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.urls-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.url-item {
+  padding: 0.75rem;
+  background-color: var(--color-bg-tertiary);
+  border-radius: var(--border-radius);
+  border-left: 3px solid var(--color-secondary);
+  word-break: break-all;
+}
+
+.url-item a {
+  color: var(--color-secondary);
+  font-size: 0.9rem;
+}
+
+.params-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.param-item {
+  padding: 0.5rem 0.75rem;
+  background-color: var(--color-bg-tertiary);
+  border-radius: var(--border-radius);
+  font-family: "Monaco", "Courier New", monospace;
+  border: 1px solid var(--color-border);
+  color: var(--color-secondary);
+  font-size: 0.85rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .filters-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-box {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .filter-group {
+    width: 100%;
+  }
+
+  .filter-select {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .filter-stats {
+    width: 100%;
+    text-align: center;
+  }
+
+  .vulnerabilities-table {
+    font-size: 0.75rem;
+  }
+
+  .vulnerabilities-table th,
+  .vulnerabilities-table td {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .distribution-items {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .distribution-bar {
+    height: 60px;
+  }
+
+  .distribution-value {
+    font-size: 1.25rem;
+  }
+}
